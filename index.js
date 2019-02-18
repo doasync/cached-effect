@@ -2,73 +2,73 @@
 
 const { useState } = require('react');
 
-const CACHE = {
-  result: 0,
-  error: 1,
-};
-
 const promiseMap = new WeakMap();
 
-function useCache (effect, kind) {
+function useCache (effect) {
   const [state, setState] = useState([undefined, null]);
   const thunk = effect.use.getCurrent();
   const fpromise = promiseMap.get(thunk);
 
   if (fpromise) {
     if (fpromise.cache) {
-      return kind !== undefined
-        ? fpromise.cache()[kind]
-        : fpromise.cache();
+      return fpromise.cache();
     }
-    fpromise
-      .then(result => setState([result, null]))
-      .catch(error => setState([undefined, error]));
+    fpromise.then(
+      result => setState([result, null]),
+      error => setState([undefined, error]),
+    );
   } else {
     const effectCreate = effect.create;
     // eslint-disable-next-line no-param-reassign
-    effect.create = payload => effectCreate(payload)
-      .then(result => setState([result, null]))
-      .catch(error => setState([undefined, error]));
+    effect.create = (payload) => {
+      const fp = effectCreate(payload);
+      fp.then(
+        result => setState([result, null]),
+        error => setState([undefined, error]),
+      );
+      return fp;
+    };
   }
 
-  return kind !== undefined ? state[kind] : state;
+  return state;
 }
 
 function useError (effect) {
-  return useCache(effect, CACHE.error);
+  return useCache(effect)[1];
 }
 
 function usePending (effect) {
+  const [pending, setPending] = useState(true);
   const thunk = effect.use.getCurrent();
   const fpromise = promiseMap.get(thunk);
 
-  if (!thunk || !fpromise) {
-    return false;
+  if (fpromise) {
+    if (fpromise.cache) {
+      return false;
+    }
+    fpromise.finally(() => setPending(false));
+    return pending;
   }
 
-  return !fpromise.cache;
+  return false;
 }
 
 function createEffect (handler) {
   const instance = payload => instance.create(payload);
 
-  instance.once = payload => promiseMap.get(thunk) || instance.create(payload);
-
   instance.use = (fn) => {
-    instance.use.called = false;
     thunk = fn;
     return instance;
   };
-
   instance.use.getCurrent = () => thunk;
-  instance.use.called = false;
+
+  instance.once = payload => promiseMap.get(thunk) || instance.create(payload);
 
   instance.create = (payload) => {
     if (thunk === undefined) {
       throw new Error('no thunk used in effect');
     }
-    const fpromise = exec(payload, thunk);
-    instance.use.called = true;
+    const fpromise = exec(thunk, payload);
     promiseMap.set(thunk, fpromise);
     return fpromise;
   };
@@ -78,23 +78,22 @@ function createEffect (handler) {
   return instance;
 }
 
-function exec (args, thunk) {
+function exec (thunk, payload) {
   let promise;
-  let errorSync;
+  let syncError;
   let done = false;
   let fpromise;
 
   try {
-    promise = thunk(args);
+    promise = thunk(payload);
     done = true;
   } catch (err) {
-    errorSync = err;
+    syncError = err;
   }
 
   if (done === false) {
-    fpromise = Promise.reject(errorSync);
-    fpromise.cache = () => [undefined, errorSync];
-
+    fpromise = Promise.reject(syncError);
+    fpromise.cache = () => [undefined, syncError];
     return fpromise;
   }
 
@@ -113,18 +112,15 @@ function exec (args, thunk) {
         throw error;
       },
     );
-
     return fpromise;
   }
 
   fpromise = Promise.resolve(promise);
   fpromise.cache = () => [promise, null];
-
   return fpromise;
 }
 
 module.exports = {
-  CACHE,
   useCache,
   useError,
   usePending,
