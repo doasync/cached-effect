@@ -1,4 +1,4 @@
-# Cached effects in React + hooks
+# Use cached effects in React with hooks
 
 [![NPM Version][npm-image]][npm-url] ![NPM Downloads][downloads-image] [![GitHub issues][issues-image]][issues-url] [![Telegram][telegram-image]][telegram-url]
 
@@ -32,10 +32,12 @@ import { createEffect, useCache } from './cached-effect'
 
 #### `createEffect` function
 
-Wrap an async function (that returns promise) in `createEffect`:
+Wrap an async function (that returns a promise) in `createEffect`:
 
 ```js
-export const fetchUsers = createEffect(({ organizationId }) => http
+const myEffect = createEffect(async () => { /* do something */ })
+// or
+const fetchUsers = createEffect(({ organizationId }) => http
   .get(`/organizations/${organizationId}/users`)
   .then(getData)
   .then(getUsers))
@@ -54,7 +56,8 @@ equal to `[undefined, null]` by default.
 
 #### Running effects
 
-In order to populate the cache you need to run your effect in your component:
+In order to populate the cache you need to run your effect.
+You can do it, for example, in `useEffect` hook inside of your component:
 
 ```js
 useEffect(() => {
@@ -73,10 +76,10 @@ You can also refetch users (trigger any effect) manually just calling it:
 />
 ```
 
-#### `.once()` method
+#### `.once(payload)` method
 
-You can run your effect only once, for example,
-if you have many components using this effect:
+You can run your effect only once, for instance,
+when you have many components using this effect:
 
 ```js
 useEffect(() => {
@@ -84,10 +87,9 @@ useEffect(() => {
 }, [])
 ```
 
-
 #### `usePending` hook
 
-If you need to show a spinner for example, you can use `usePending` hook
+To show a spinner, for example, you can use `usePending` hook
 to get current pending status (true/false):
 
 ```js
@@ -103,9 +105,24 @@ to get current error (or `null` if your effect is done successfully):
 const usersError = useError(fetchUsers)
 ```
 
+#### `.use(handler)` method
+
+You can replace an async handler of your effect by using `.use` method.
+This is useful for mocking API calls, testing etc.
+Just pass a new handler to `.use` method:
+
+```js
+fetchUsers.use(async () => {})
+```
+
 ### Tip
 
 If you found this hook useful, please star this package on [GitHub](https://github.com/doasync/cached-effect) ★
 
 ### Author
+
 @doasync
+
+### Credits
+
+This package was inspired by [Effector](https://github.com/zerobias/effector) library (from @ZeroBias). Effector is a reactive state manager, which has stores, events and effects as well as other useful features for managing state. It's also has `effector-react` package for React. This `cached-effect` package is going to be fully compatible with `effector` effects very soon (it's almost...)
