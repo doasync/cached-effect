@@ -1,4 +1,4 @@
-# React effect manager
+# Cached effects in React + hooks
 
 [![NPM Version][npm-image]][npm-url] ![NPM Downloads][downloads-image] [![GitHub issues][issues-image]][issues-url] [![Telegram][telegram-image]][telegram-url]
 
@@ -10,7 +10,7 @@
 [telegram-image]: http://i.imgur.com/WANXk3d.png
 [telegram-url]: https://t.me/doasync
 
-Use cached effects in React
+Manage effects in React using async functions and hooks
 
 ## Installation
 
@@ -27,7 +27,7 @@ yarn add cached-effect
 ## Usage
 
 ```js
-import { createEffect } from './cached-effect'
+import { createEffect, useCache } from './cached-effect'
 ```
 
 #### `createEffect` function
@@ -62,10 +62,9 @@ useEffect(() => {
 }, [])
 ```
 
-In the above example, users will be fetched after the render is committed
-to the screen.
+In the above example, users will be fetched after the component is mounted.
 
-You can also fetch users (trigger your effect) manually just calling it:
+You can also refetch users (trigger any effect) manually just calling it:
 
 ```js
 <Button
