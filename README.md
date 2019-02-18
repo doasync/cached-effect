@@ -1,4 +1,4 @@
-# Use cached effects in React with hooks
+# 💥 React effect manager
 
 [![NPM Version][npm-image]][npm-url] ![NPM Downloads][downloads-image] [![GitHub issues][issues-image]][issues-url] [![Telegram][telegram-image]][telegram-url]
 
@@ -10,7 +10,7 @@
 [telegram-image]: http://i.imgur.com/WANXk3d.png
 [telegram-url]: https://t.me/doasync
 
-Manage effects in React using async functions and hooks
+Manage effects in React using hooks. Create cached effects from async functions and handle them with `useCache` hook. Call your effects to update cache
 
 ## Installation
 
