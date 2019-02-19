@@ -3,9 +3,23 @@
 const { useReducer, useRef } = require('react');
 
 const promiseMap = new WeakMap();
+
+const ERROR = 1;
+const PENDING = 2;
+
+const getStatus = (fpromise) => {
+  if (fpromise.cache) {
+    return [fpromise.cache(), null, false];
+  }
+  if (fpromise.failure) {
+    return [undefined, fpromise.failure(), false];
+  }
+  return [undefined, null, true];
+};
+
 const toggleState = state => !state;
 
-function useCache (effect) {
+const useCache = (effect) => {
   const self = useRef({
     state: [undefined, null, false],
     mounting: true,
@@ -16,50 +30,41 @@ function useCache (effect) {
   const [, forceUpdate] = useReducer(toggleState, true);
   const thunk = effect.use.getCurrent();
   const fpromise = promiseMap.get(thunk);
+
   self.updated = true;
 
   if (self.mounting) {
-    if (!fpromise) {
-      const effectCreate = effect.create;
-      // eslint-disable-next-line no-param-reassign
-      effect.create = (payload) => {
-        const p = effectCreate(payload);
-        self.updated = false;
-        p.anyway().then(() => !self.updated && forceUpdate());
-        return p;
-      };
-    }
+    const effectCreate = effect.create;
+    // eslint-disable-next-line no-param-reassign
+    effect.create = (payload) => {
+      const p = effectCreate(payload);
+      self.updated = false;
+      p.anyway().then(() => !self.updated && forceUpdate());
+      return p;
+    };
     self.mounting = false;
   }
 
-  if (fpromise) {
-    if (fpromise.cache) {
-      const result = fpromise.cache();
-      self.state = [result, null, false];
-    }
-    if (fpromise.failure) {
-      const error = fpromise.failure();
-      self.state = [undefined, error, false];
-    }
-    if (fpromise !== self.promise && !fpromise.cache && !fpromise.failure) {
-      self.state = [undefined, null, true];
-      fpromise.anyway().then(() => self.state[2] && forceUpdate());
+  if (!fpromise) {
+    return self.state;
+  }
+
+  self.state = getStatus(fpromise);
+
+  if (fpromise !== self.promise) {
+    if (self.state[PENDING]) {
+      fpromise.anyway().then(() => self.state[PENDING] && forceUpdate());
     }
     self.promise = fpromise;
   }
 
   return self.state;
-}
+};
 
-function useError (...args) {
-  return useCache(...args)[1];
-}
+const useError = (...args) => useCache(...args)[ERROR];
+const usePending = (...args) => useCache(...args)[PENDING];
 
-function usePending (...args) {
-  return useCache(...args)[2];
-}
-
-function createEffect (handler) {
+const createEffect = (handler) => {
   const instance = (payload, ...args) => instance.create(payload, args);
 
   instance.use = (fn) => {
@@ -83,7 +88,7 @@ function createEffect (handler) {
   let thunk = handler;
 
   return instance;
-}
+};
 
 function exec (thunk, payload) {
   let promise;
