@@ -3,9 +3,10 @@
 const { useState } = require('react');
 
 const promiseMap = new WeakMap();
+const defaultCache = [undefined, null]
 
 function useCache (effect) {
-  const [state, setState] = useState([undefined, null]);
+  const [state, setState] = useState(defaultCache);
   const thunk = effect.use.getCurrent();
   const fpromise = promiseMap.get(thunk);
 
@@ -46,7 +47,10 @@ function usePending (effect) {
     if (fpromise.cache) {
       return false;
     }
-    fpromise.finally(() => setPending(false));
+    fpromise.then(
+      () => setPending(false),
+      () => setPending(false),
+    );
     return pending;
   }
 
