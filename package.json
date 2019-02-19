@@ -1,7 +1,7 @@
 {
   "name": "cached-effect",
   "description": "React effect manager",
-  "version": "2.0.0-beta1",
+  "version": "2.0.0-beta2",
   "author": {
     "name": "DoAsync",
     "email": "doasync@gmail.com"
