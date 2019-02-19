@@ -27,7 +27,7 @@ yarn add cached-effect
 ## Usage
 
 ```js
-import { createEffect, useCache } from './cached-effect'
+import { createEffect, useCache } from 'cached-effect'
 ```
 
 #### `createEffect` function
