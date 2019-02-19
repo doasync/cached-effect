@@ -48,11 +48,11 @@ const fetchUsers = createEffect(({ organizationId }) => http
 Then wrap your effect in `useCache` hook in your React component:
 
 ```js
-const [users, usersError] = useCache(fetchUsers)
+const [users, usersError, usersLoading] = useCache(fetchUsers)
 ```
 
-`useCache` returns an array of `[result, error]` which is
-equal to `[undefined, null]` by default.
+`useCache` returns an array of `[result, error, pending]` which is
+equal to `[undefined, null, false]` by default.
 
 #### Running effects
 
@@ -125,4 +125,4 @@ If you found this hook useful, please star this package on [GitHub](https://gith
 
 ### Credits
 
-This package was inspired by [Effector](https://github.com/zerobias/effector) library (from @ZeroBias). Effector is a reactive state manager, which has stores, events and effects as well as other useful features for managing state. It's also has `effector-react` package for React. This `cached-effect` package is going to be fully compatible with `effector` effects very soon (it's almost...)
+This package was inspired by [Effector](https://github.com/zerobias/effector) library (from @ZeroBias). Effector is a reactive state manager, which has stores, events and effects as well as other useful features for managing state. It's also has `effector-react` package for React. This `cached-effect` package is currently not compatible with `effector` effects

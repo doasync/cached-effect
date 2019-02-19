@@ -1,37 +1,41 @@
 /* eslint-disable no-use-before-define, promise/catch-or-return */
 
-const { useState } = require('react');
+const { useReducer, useRef } = require('react');
 
 const promiseMap = new WeakMap();
-const defaultCache = [undefined, null]
+const toggleState = state => !state;
 
 function useCache (effect) {
-  const [state, setState] = useState(defaultCache);
+  const mountingRef = useRef(true);
+  const [, forceUpdate] = useReducer(toggleState, false);
   const thunk = effect.use.getCurrent();
   const fpromise = promiseMap.get(thunk);
 
   if (fpromise) {
     if (fpromise.cache) {
-      return fpromise.cache();
+      const result = fpromise.cache();
+      return [result, null, false];
     }
-    fpromise.then(
-      result => setState([result, null]),
-      error => setState([undefined, error]),
-    );
-  } else {
+    if (fpromise.failure) {
+      const error = fpromise.failure();
+      return [undefined, error, false];
+    }
+    fpromise.anyway().then(forceUpdate);
+    return [undefined, null, true];
+  }
+
+  if (mountingRef.current === true) {
     const effectCreate = effect.create;
     // eslint-disable-next-line no-param-reassign
     effect.create = (payload) => {
-      const fp = effectCreate(payload);
-      fp.then(
-        result => setState([result, null]),
-        error => setState([undefined, error]),
-      );
-      return fp;
+      const p = effectCreate(payload);
+      p.anyway().then(forceUpdate);
+      return p;
     };
+    mountingRef.current = false;
   }
 
-  return state;
+  return [undefined, null, false];
 }
 
 function useError (effect) {
@@ -39,31 +43,17 @@ function useError (effect) {
 }
 
 function usePending (effect) {
-  const [pending, setPending] = useState(true);
-  const thunk = effect.use.getCurrent();
-  const fpromise = promiseMap.get(thunk);
-
-  if (fpromise) {
-    if (fpromise.cache) {
-      return false;
-    }
-    fpromise.then(
-      () => setPending(false),
-      () => setPending(false),
-    );
-    return pending;
-  }
-
-  return false;
+  return useCache(effect)[2];
 }
 
 function createEffect (handler) {
-  const instance = payload => instance.create(payload);
+  const instance = (payload, ...args) => instance.create(payload, args);
 
   instance.use = (fn) => {
     thunk = fn;
     return instance;
   };
+
   instance.use.getCurrent = () => thunk;
 
   instance.once = payload => promiseMap.get(thunk) || instance.create(payload);
@@ -85,19 +75,20 @@ function createEffect (handler) {
 function exec (thunk, payload) {
   let promise;
   let syncError;
-  let done = false;
+  let success = false;
   let fpromise;
 
   try {
     promise = thunk(payload);
-    done = true;
+    success = true;
   } catch (err) {
     syncError = err;
   }
 
-  if (done === false) {
+  if (success === false) {
     fpromise = Promise.reject(syncError);
-    fpromise.cache = () => [undefined, syncError];
+    fpromise.failure = () => syncError;
+    fpromise.anyway = () => Promise.resolve();
     return fpromise;
   }
 
@@ -108,19 +99,21 @@ function exec (thunk, payload) {
   ) {
     fpromise = promise.then(
       (result) => {
-        fpromise.cache = () => [result, null];
+        fpromise.cache = () => result;
         return result;
       },
       (error) => {
-        fpromise.cache = () => [undefined, error];
+        fpromise.failure = () => error;
         throw error;
       },
     );
+    fpromise.anyway = () => fpromise.then(() => undefined, () => {});
     return fpromise;
   }
 
   fpromise = Promise.resolve(promise);
-  fpromise.cache = () => [promise, null];
+  fpromise.cache = () => promise; // result
+  fpromise.anyway = () => Promise.resolve();
   return fpromise;
 }
 
