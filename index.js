@@ -1,5 +1,3 @@
-/* eslint-disable no-use-before-define, promise/catch-or-return */
-
 const { useReducer, useRef } = require('react');
 
 const promiseMap = new WeakMap();
@@ -39,6 +37,7 @@ const useCache = (effect) => {
     effect.create = (payload) => {
       const p = effectCreate(payload);
       self.updated = false;
+      // eslint-disable-next-line promise/catch-or-return
       p.anyway().then(() => !self.updated && forceUpdate());
       return p;
     };
@@ -53,6 +52,7 @@ const useCache = (effect) => {
 
   if (fpromise !== self.promise) {
     if (self.state[PENDING]) {
+      // eslint-disable-next-line promise/catch-or-return
       fpromise.anyway().then(() => self.state[PENDING] && forceUpdate());
     }
     self.promise = fpromise;
@@ -64,46 +64,13 @@ const useCache = (effect) => {
 const useError = (...args) => useCache(...args)[ERROR];
 const usePending = (...args) => useCache(...args)[PENDING];
 
-const createEffect = (handler) => {
-  const instance = (payload, ...args) => instance.create(payload, args);
-
-  instance.use = (fn) => {
-    thunk = fn;
-    return instance;
-  };
-
-  instance.use.getCurrent = () => thunk;
-
-  instance.once = payload => promiseMap.get(thunk) || instance.create(payload);
-
-  instance.create = (payload) => {
-    if (thunk === undefined) {
-      throw new Error('no thunk used in effect');
-    }
-    const fpromise = exec(thunk, payload);
-    promiseMap.set(thunk, fpromise);
-    return fpromise;
-  };
-
-  let thunk = handler;
-
-  return instance;
-};
-
-function exec (thunk, payload) {
+const exec = (thunk, payload) => {
   let promise;
-  let syncError;
-  let success = false;
   let fpromise;
 
   try {
     promise = thunk(payload);
-    success = true;
-  } catch (err) {
-    syncError = err;
-  }
-
-  if (success === false) {
+  } catch (syncError) {
     fpromise = Promise.reject(syncError);
     fpromise.failure = () => syncError;
     fpromise.anyway = () => Promise.resolve();
@@ -133,7 +100,36 @@ function exec (thunk, payload) {
   fpromise.cache = () => promise; // result
   fpromise.anyway = () => Promise.resolve();
   return fpromise;
-}
+};
+
+const createEffect = (handler) => {
+  let thunk;
+
+  const instance = (payload, ...args) => instance.create(payload, args);
+
+  instance.use = (fn) => {
+    thunk = fn;
+    promiseMap.delete(thunk);
+    return instance;
+  };
+
+  instance.use.getCurrent = () => thunk;
+
+  instance.once = payload => promiseMap.get(thunk) || instance.create(payload);
+
+  instance.create = (payload) => {
+    if (thunk === undefined) {
+      throw new Error('no thunk used in effect');
+    }
+    const fpromise = exec(thunk, payload);
+    promiseMap.set(thunk, fpromise);
+    return fpromise;
+  };
+
+  thunk = handler;
+
+  return instance;
+};
 
 module.exports = {
   useCache,
