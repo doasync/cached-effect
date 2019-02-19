@@ -6,44 +6,57 @@ const promiseMap = new WeakMap();
 const toggleState = state => !state;
 
 function useCache (effect) {
-  const mountingRef = useRef(true);
-  const [, forceUpdate] = useReducer(toggleState, false);
+  const self = useRef({
+    state: [undefined, null, false],
+    mounting: true,
+    promise: null,
+    updated: false,
+  }).current;
+
+  const [, forceUpdate] = useReducer(toggleState, true);
   const thunk = effect.use.getCurrent();
   const fpromise = promiseMap.get(thunk);
+  self.updated = true;
+
+  if (self.mounting) {
+    if (!fpromise) {
+      const effectCreate = effect.create;
+      // eslint-disable-next-line no-param-reassign
+      effect.create = (payload) => {
+        const p = effectCreate(payload);
+        self.updated = false;
+        p.anyway().then(() => !self.updated && forceUpdate());
+        return p;
+      };
+    }
+    self.mounting = false;
+  }
 
   if (fpromise) {
     if (fpromise.cache) {
       const result = fpromise.cache();
-      return [result, null, false];
+      self.state = [result, null, false];
     }
     if (fpromise.failure) {
       const error = fpromise.failure();
-      return [undefined, error, false];
+      self.state = [undefined, error, false];
     }
-    fpromise.anyway().then(forceUpdate);
-    return [undefined, null, true];
+    if (fpromise !== self.promise && !fpromise.cache && !fpromise.failure) {
+      self.state = [undefined, null, true];
+      fpromise.anyway().then(() => self.state[2] && forceUpdate());
+    }
+    self.promise = fpromise;
   }
 
-  if (mountingRef.current === true) {
-    const effectCreate = effect.create;
-    // eslint-disable-next-line no-param-reassign
-    effect.create = (payload) => {
-      const p = effectCreate(payload);
-      p.anyway().then(forceUpdate);
-      return p;
-    };
-    mountingRef.current = false;
-  }
-
-  return [undefined, null, false];
+  return self.state;
 }
 
-function useError (effect) {
-  return useCache(effect)[1];
+function useError (...args) {
+  return useCache(...args)[1];
 }
 
-function usePending (effect) {
-  return useCache(effect)[2];
+function usePending (...args) {
+  return useCache(...args)[2];
 }
 
 function createEffect (handler) {
