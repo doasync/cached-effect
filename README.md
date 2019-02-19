@@ -12,6 +12,8 @@
 
 Manage effects in React using hooks. Create cached effects from async functions and handle them with `useCache` hook. Call your effects to update cache
 
+> This package is very lightweight: 1.5kb minified (without `react`)
+
 ## Installation
 
 ```bash
