@@ -10,17 +10,21 @@
 [telegram-image]: http://i.imgur.com/WANXk3d.png
 [telegram-url]: https://t.me/doasync
 
-Manage effects in React using hooks. Create cached effects from async functions and handle them with `useCache` hook. Call your effects to update cache
+Manage effects in React using hooks.
+Create cached effects from async functions and handle them with `useCache` hook.
+Run your effects in order to update cache.
 
 > This package is very lightweight: 1.5kb minified (without `react`)
 
 ## Installation
 
+`npm`
+
 ```bash
 npm install cached-effect
 ```
 
-or
+or `yarn`
 
 ```bash
 yarn add cached-effect
@@ -32,20 +36,18 @@ yarn add cached-effect
 import { createEffect, useCache } from 'cached-effect'
 ```
 
-#### `createEffect` function
-
-Wrap an async function (that returns a promise) in `createEffect`:
+Wrap an async function or a function that returns a promise in `createEffect`:
 
 ```js
 const myEffect = createEffect(async () => { /* do something */ })
+
 // or
+
 const fetchUsers = createEffect(({ organizationId }) => http
   .get(`/organizations/${organizationId}/users`)
   .then(getData)
   .then(getUsers))
 ```
-
-#### `useCache` hook
 
 Then wrap your effect in `useCache` hook in your React component:
 
@@ -53,13 +55,14 @@ Then wrap your effect in `useCache` hook in your React component:
 const [users, usersError, usersLoading] = useCache(fetchUsers)
 ```
 
-`useCache` returns an array of `[result, error, pending]` which is
-equal to `[undefined, null, false]` by default.
+It returns an array of `[result, error, pending]`. Use array destructuring
+to get values you need. These values stay the same
+until you run your effect.
 
-#### Running effects
+### Running effects
 
-In order to populate the cache you need to run your effect.
-You can do it, for example, in `useEffect` hook inside of your component:
+In order to update the cache you need to run your effect.
+You can do this, for example, in `useEffect` hook inside of your component.
 
 ```js
 useEffect(() => {
@@ -67,20 +70,8 @@ useEffect(() => {
 }, [])
 ```
 
-In the above example, users will be fetched after the component is mounted.
-
-You can also refetch users (trigger any effect) manually just calling it:
-
-```js
-<Button
-  type='button'
-  onClick={() => fetchUsers({ organizationId })}
-/>
-```
-
-#### `.once(payload)` method
-
-You can run your effect only once, for instance,
+So, users will be fetched after the component is mounted.
+But it's useful to run your effect only **once**, for instance,
 when you have many components using this effect:
 
 ```js
@@ -89,33 +80,101 @@ useEffect(() => {
 }, [])
 ```
 
-#### `usePending` hook
-
-To show a spinner, for example, you can use `usePending` hook
-to get current pending status (true/false):
+You can also refetch users (rerun any effect) manually just calling it:
 
 ```js
-const usersLoading = usePending(fetchUsers)
+<Button
+  type='button'
+  onClick={() => fetchUsers({ organizationId })}
+/>
 ```
+
+## React Hooks
+
+#### `useCache` hook
+
+Takes an effect and returns an array of `[result, error, pending]`:
+
+```js
+const [result, error, pending] = useCache(effect)
+```
+
+It is equal to `[undefined, null, false]` by default and updates its values
+when you call the effect
+
+#### `usePending` hook
+
+Returns a pending status of your effect (true/false):
+
+```js
+const pending = usePending(effect)
+```
+
+You can use it to show a spinner, for example.
+It is a syntactic sugar over `useCache` hook (returns the third value)
 
 #### `useError` hook
 
-If you need to show only an error somewhere for this effect, use `useError` hook
-to get current error (or `null` if your effect is done successfully):
+Returns an error of your effect (or `null`):
 
 ```js
 const usersError = useError(fetchUsers)
 ```
 
-#### `.use(handler)` method
+You can use it if you need to show only an error of your effect somewhere.
+It is a syntactic sugar over `useCache` hook (the second array value)
 
-You can replace an async handler of your effect by using `.use` method.
+## Effect
+
+Effect is a container for an async function. It can be safely used in place of
+the original async function.
+
+#### `createEffect(handler)`
+
+Creates an effect
+
+#### `effect(payload)`
+
+Runs an effect. Returns promise
+
+#### `effect.once(payload)`
+
+Runs an effect only once. Returns original promise on a repeated call
+
+#### `effect.watch(watcher)`
+
+Listens to the effect and calls watcher. Watcher receives payload and promise.
+
+Returns back an unsubscribe function.
+
+#### `effect.use(handler)`
+
+Injects an async function into effect (can be called multiple times).
 This is useful for mocking API calls, testing etc.
-Just pass a new handler to `.use` method:
 
-```js
-fetchUsers.use(async () => {})
-```
+#### `effect.use.getCurrent()`
+
+Returns current effect handler
+
+## Promise
+
+Promise is a container for async value. It has some additional methods.
+
+#### `promise.cache()`
+
+Returns a result synchronously if promise is completed successfully. 
+
+There will be no `promise.cache` method if promise is rejected!
+
+#### `effect.failure()`
+
+Returns an error synchronously if promise failed.
+
+There will be no `promise.failure` method if promise fulfills!
+
+#### `effect.anyway()`
+
+Returns a promise that will be resolved anyway (aka `.finally`)
 
 ### Tip
 
@@ -127,4 +186,4 @@ If you found this hook useful, please star this package on [GitHub](https://gith
 
 ### Credits
 
-This package was inspired by [Effector](https://github.com/zerobias/effector) library (from @ZeroBias). Effector is a reactive state manager, which has stores, events and effects as well as other useful features for managing state. It's also has `effector-react` package for React. This `cached-effect` package is currently not compatible with `effector` effects
+This package was inspired by [Effector](https://github.com/zerobias/effector) library (from @ZeroBias). Effector is a reactive state manager, which has stores, events and effects as well as other useful features for managing state. This package is not compatible with `effector` effects right now.

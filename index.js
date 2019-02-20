@@ -1,4 +1,4 @@
-const { useReducer, useRef } = require('react');
+const { useRef, useReducer, useEffect } = require('react');
 
 const promiseMap = new WeakMap();
 
@@ -20,7 +20,6 @@ const toggleState = state => !state;
 const useCache = (effect) => {
   const self = useRef({
     state: [undefined, null, false],
-    mounting: true,
     promise: null,
     updated: false,
   }).current;
@@ -31,18 +30,11 @@ const useCache = (effect) => {
 
   self.updated = true;
 
-  if (self.mounting) {
-    const effectCreate = effect.create;
-    // eslint-disable-next-line no-param-reassign
-    effect.create = (payload) => {
-      const p = effectCreate(payload);
-      self.updated = false;
-      // eslint-disable-next-line promise/catch-or-return
-      p.anyway().then(() => !self.updated && forceUpdate());
-      return p;
-    };
-    self.mounting = false;
-  }
+  useEffect(() => effect.watch((payload, p) => {
+    self.updated = false;
+    // eslint-disable-next-line promise/catch-or-return
+    p.anyway().then(() => !self.updated && forceUpdate());
+  }), []);
 
   if (!fpromise) {
     return self.state;
@@ -103,6 +95,7 @@ const exec = (thunk, payload) => {
 };
 
 const createEffect = (handler) => {
+  const watchers = new Set();
   let thunk;
 
   const instance = (payload, ...args) => instance.create(payload, args);
@@ -118,12 +111,16 @@ const createEffect = (handler) => {
   instance.once = payload => promiseMap.get(thunk) || instance.create(payload);
 
   instance.create = (payload) => {
-    if (thunk === undefined) {
-      throw new Error('no thunk used in effect');
-    }
+    if (thunk === undefined) throw new Error('no thunk used in effect');
     const fpromise = exec(thunk, payload);
     promiseMap.set(thunk, fpromise);
+    watchers.forEach(watcher => watcher(payload, fpromise));
     return fpromise;
+  };
+
+  instance.watch = (watcher) => {
+    watchers.add(watcher);
+    return () => watchers.delete(watcher);
   };
 
   thunk = handler;
