@@ -10,9 +10,7 @@
 [telegram-image]: http://i.imgur.com/WANXk3d.png
 [telegram-url]: https://t.me/doasync
 
-Manage effects in React using hooks.
-Create cached effects from async functions and handle them with `useCache` hook.
-Run your effects in order to update cache.
+Manage effects in React using hooks. Create cached effects from async functions and handle them with `useCache` hook. Run your effects in order to update cache.
 
 > This package is very lightweight: 1.5kb minified (without `react`)
 
@@ -53,14 +51,11 @@ Then wrap your effect in `useCache` hook in your React component:
 const [users, usersError, usersLoading] = useCache(fetchUsers)
 ```
 
-It returns an array of `[result, error, pending]`, which is equal to
-`[undefined, null, false]` by default. These values stay the same until you run
-your effect. Use array destructuring to get values that you need.
+It returns an array of `[result, error, pending]`, which is equal to `[undefined, null, false]` by default. These values stay the same until you run your effect. Use array destructuring to get values that you need.
 
 ### Running effects
 
-In order to update the cache you need to run your effect.
-You can do this, for example, in `useEffect` hook inside of your component.
+In order to update the cache you need to run your effect. You can do this, for example, in `useEffect` hook inside of your component.
 
 ```js
 useEffect(() => {
@@ -68,9 +63,7 @@ useEffect(() => {
 }, [])
 ```
 
-So, users will be fetched after the component is mounted.
-But it's useful to run your effect only **once**, for instance,
-when you have many components using this effect:
+So, users will be fetched after the component is mounted. But it's useful to run your effect only **once**, for instance, when you have many components using this effect:
 
 ```js
 useEffect(() => {
@@ -97,8 +90,7 @@ Takes an effect and returns an array of `[result, error, pending]`:
 const [result, error, pending] = useCache(effect)
 ```
 
-It is equal to `[undefined, null, false]` by default and updates its values
-when you call the effect
+It is equal to `[undefined, null, false]` by default and updates its values when you call the effect
 
 #### `usePending` hook
 
@@ -108,8 +100,7 @@ Returns a pending status of your effect (true/false):
 const pending = usePending(effect)
 ```
 
-You can use it to show a spinner, for example.
-It is a syntactic sugar over `useCache` hook (the third value)
+You can use it to show a spinner, for example. It is a syntactic sugar over `useCache` hook (the third value)
 
 #### `useError` hook
 
@@ -119,13 +110,11 @@ Returns an error of your effect (or `null`):
 const error = useError(effect)
 ```
 
-You can use it if you need to show only an error of your effect somewhere.
-It is a syntactic sugar over `useCache` hook (the second value)
+You can use it if you need to show only an error of your effect somewhere. It is a syntactic sugar over `useCache` hook (the second value)
 
 ## Effect
 
-Effect is a container for an async function. It can be safely used in place of
-the original async function.
+Effect is a container for an async function. It can be safely used in place of the original async function.
 
 #### `createEffect(handler)`
 
@@ -147,8 +136,7 @@ Returns back an unsubscribe function.
 
 #### `effect.use(handler)`
 
-Injects an async function into effect (can be called multiple times).
-This is useful for mocking API calls, testing etc.
+Injects an async function into effect (can be called multiple times). This is useful for mocking API calls, testing etc.
 
 #### `effect.use.getCurrent()`
 
