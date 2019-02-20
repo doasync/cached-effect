@@ -116,7 +116,7 @@ It is a syntactic sugar over `useCache` hook (the third value)
 Returns an error of your effect (or `null`):
 
 ```js
-const usersError = useError(fetchUsers)
+const error = useError(effect)
 ```
 
 You can use it if you need to show only an error of your effect somewhere.
