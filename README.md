@@ -18,8 +18,6 @@ Run your effects in order to update cache.
 
 ## Installation
 
-`npm`
-
 ```bash
 npm install cached-effect
 ```
@@ -55,9 +53,9 @@ Then wrap your effect in `useCache` hook in your React component:
 const [users, usersError, usersLoading] = useCache(fetchUsers)
 ```
 
-It returns an array of `[result, error, pending]`. Use array destructuring
-to get values you need. These values stay the same
-until you run your effect.
+It returns an array of `[result, error, pending]`, which is equal to
+`[undefined, null, false]` by default. These values stay the same until you run
+your effect. Use array destructuring to get values that you need.
 
 ### Running effects
 
@@ -111,7 +109,7 @@ const pending = usePending(effect)
 ```
 
 You can use it to show a spinner, for example.
-It is a syntactic sugar over `useCache` hook (returns the third value)
+It is a syntactic sugar over `useCache` hook (the third value)
 
 #### `useError` hook
 
@@ -122,7 +120,7 @@ const usersError = useError(fetchUsers)
 ```
 
 You can use it if you need to show only an error of your effect somewhere.
-It is a syntactic sugar over `useCache` hook (the second array value)
+It is a syntactic sugar over `useCache` hook (the second value)
 
 ## Effect
 
@@ -131,7 +129,7 @@ the original async function.
 
 #### `createEffect(handler)`
 
-Creates an effect
+Creates and returns an effect
 
 #### `effect(payload)`
 
@@ -166,13 +164,13 @@ Returns a result synchronously if promise is completed successfully.
 
 There will be no `promise.cache` method if promise is rejected!
 
-#### `effect.failure()`
+#### `promise.failure()`
 
 Returns an error synchronously if promise failed.
 
 There will be no `promise.failure` method if promise fulfills!
 
-#### `effect.anyway()`
+#### `promise.anyway()`
 
 Returns a promise that will be resolved anyway (aka `.finally`)
 
