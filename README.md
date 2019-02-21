@@ -10,7 +10,7 @@
 [telegram-image]: http://i.imgur.com/WANXk3d.png
 [telegram-url]: https://t.me/doasync
 
-Manage effects in React using hooks. Create cached effects from async functions and handle them with `useCache` hook. Run your effects in order to update cache.
+Manage effects in React using hooks. Create cached effects from async functions and handle them with `useCache` hook. Run your effects in order to update cache. It supports Concurrent Mode and rerenders components only when needed.
 
 > This package is very lightweight: 1.5kb minified (without `react`)
 
@@ -32,30 +32,30 @@ yarn add cached-effect
 import { createEffect, useCache } from 'cached-effect'
 ```
 
-Wrap an async function or a function that returns a promise in `createEffect`:
+Wrap a function that returns a promise in `createEffect` to **create** an effect:
 
 ```js
-const myEffect = createEffect(async () => { /* do something */ })
+const effect = createEffect(async () => { /* do something */ })
 
 // or
 
-const fetchUsers = createEffect(({ organizationId }) => http
+const fetchUsers = createEffect(({ organizationId }) => axios
   .get(`/organizations/${organizationId}/users`)
-  .then(getData)
-  .then(getUsers))
+  .then(getUsers)
+)
 ```
 
-Then wrap your effect in `useCache` hook in your React component:
+Then **use** it in useCache hook in your React component:
 
 ```js
 const [users, usersError, usersLoading] = useCache(fetchUsers)
 ```
 
-It returns an array of `[result, error, pending]`, which is equal to `[undefined, null, false]` by default. These values stay the same until you run your effect. Use array destructuring to get values that you need.
+It returns an array of `[result, error, pending]`. These values stay the same until you run your effect. Use array destructuring to get values that you need.
 
 ### Running effects
 
-In order to update the cache you need to run your effect. You can do this, for example, in `useEffect` hook inside of your component.
+In order to update the cache you need to **run** your effect. For example, in `useEffect` hook inside of your component:
 
 ```js
 useEffect(() => {
@@ -63,7 +63,7 @@ useEffect(() => {
 }, [])
 ```
 
-So, users will be fetched after the component is mounted. But it's useful to run your effect only **once**, for instance, when you have many components using this effect:
+In this case users will be fetched after the component mounts. But it's useful to run your effect only **once**, for instance, when you have many mounting components using this effect:
 
 ```js
 useEffect(() => {
@@ -71,7 +71,7 @@ useEffect(() => {
 }, [])
 ```
 
-You can also refetch users (rerun any effect) manually just calling it:
+You can also refetch users or rerun any effect **manually** just calling it:
 
 ```js
 <Button
@@ -90,7 +90,8 @@ Takes an effect and returns an array of `[result, error, pending]`:
 const [result, error, pending] = useCache(effect)
 ```
 
-It is equal to `[undefined, null, false]` by default and updates its values when you call the effect
+It is equal to `[undefined, null, false]` by default and updates its values
+when you call the effect
 
 #### `usePending` hook
 
@@ -110,11 +111,13 @@ Returns an error of your effect (or `null`):
 const error = useError(effect)
 ```
 
-You can use it if you need to show only an error of your effect somewhere. It is a syntactic sugar over `useCache` hook (the second value)
+You can use it if you need to show only an error of your effect somewhere.
+It is a syntactic sugar over `useCache` hook (the second value)
 
 ## Effect
 
-Effect is a container for an async function. It can be safely used in place of the original async function.
+Effect is a container for an async function. It can be safely used in place of
+the original async function.
 
 #### `createEffect(handler)`
 
@@ -136,7 +139,8 @@ Returns back an unsubscribe function.
 
 #### `effect.use(handler)`
 
-Injects an async function into effect (can be called multiple times). This is useful for mocking API calls, testing etc.
+Injects an async function into effect (can be called multiple times).
+This is useful for mocking API calls, testing etc.
 
 #### `effect.use.getCurrent()`
 

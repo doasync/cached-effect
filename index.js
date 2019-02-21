@@ -1,3 +1,5 @@
+/* eslint-disable promise/always-return, promise/catch-or-return */
+
 const { useRef, useReducer, useEffect } = require('react');
 
 const promiseMap = new WeakMap();
@@ -21,34 +23,33 @@ const useCache = (effect) => {
   const self = useRef({
     state: [undefined, null, false],
     promise: null,
-    updated: false,
   }).current;
 
   const [, forceUpdate] = useReducer(toggleState, true);
   const thunk = effect.use.getCurrent();
   const fpromise = promiseMap.get(thunk);
 
-  self.updated = true;
-
-  useEffect(() => effect.watch((payload, p) => {
-    self.updated = false;
-    // eslint-disable-next-line promise/catch-or-return
-    p.anyway().then(() => !self.updated && forceUpdate());
-  }), []);
-
-  if (!fpromise) {
-    return self.state;
-  }
-
-  self.state = getStatus(fpromise);
-
-  if (fpromise !== self.promise) {
-    if (self.state[PENDING]) {
-      // eslint-disable-next-line promise/catch-or-return
-      fpromise.anyway().then(() => self.state[PENDING] && forceUpdate());
-    }
+  if (fpromise) {
+    self.state = getStatus(fpromise);
     self.promise = fpromise;
   }
+
+  useEffect(() => {
+    if (self.state[PENDING]) {
+      fpromise.anyway().then(() => {
+        if (self.promise === fpromise && self.state[PENDING]) forceUpdate();
+      });
+    }
+
+    return effect.watch((payload, p) => {
+      self.promise = p;
+      if (!self.state[PENDING]) forceUpdate();
+
+      return p.anyway().then(() => {
+        if (self.promise === p && self.state[PENDING]) forceUpdate();
+      });
+    });
+  }, []);
 
   return self.state;
 };
@@ -69,11 +70,7 @@ const exec = (thunk, payload) => {
     return fpromise;
   }
 
-  if (
-    typeof promise === 'object'
-    && promise !== null
-    && typeof promise.then === 'function'
-  ) {
+  if (typeof promise === 'object' && promise !== null && typeof promise.then === 'function') {
     fpromise = promise.then(
       (result) => {
         fpromise.cache = () => result;
