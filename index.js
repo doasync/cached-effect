@@ -99,7 +99,7 @@ const exec = (thunk, payload) => {
 
 const createEffect = (handler) => {
   const watchers = new Set();
-  let thunk;
+  let thunk = handler;
 
   const instance = (payload, ...args) => instance.create(payload, args);
 
@@ -125,8 +125,6 @@ const createEffect = (handler) => {
     watchers.add(watcher);
     return () => watchers.delete(watcher);
   };
-
-  thunk = handler;
 
   return instance;
 };
