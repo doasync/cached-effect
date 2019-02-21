@@ -37,16 +37,22 @@ const useCache = (effect) => {
   useEffect(() => {
     if (self.state[PENDING]) {
       fpromise.anyway().then(() => {
-        if (self.promise === fpromise && self.state[PENDING]) forceUpdate();
+        if (self.promise === fpromise && self.state[PENDING]) {
+          forceUpdate();
+        }
       });
     }
 
     return effect.watch((payload, p) => {
       self.promise = p;
-      if (!self.state[PENDING]) forceUpdate();
+      if (!self.state[PENDING]) {
+        forceUpdate();
+      }
 
       return p.anyway().then(() => {
-        if (self.promise === p && self.state[PENDING]) forceUpdate();
+        if (self.promise === p && self.state[PENDING]) {
+          forceUpdate();
+        }
       });
     });
   }, []);
