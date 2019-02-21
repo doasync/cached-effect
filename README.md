@@ -10,15 +10,11 @@
 [telegram-image]: http://i.imgur.com/WANXk3d.png
 [telegram-url]: https://t.me/doasync
 
-Manage effects in React using hooks.
-Create cached effects from async functions and handle them with `useCache` hook.
-Run your effects in order to update cache.
+Manage effects in React using hooks. Create cached effects from async functions and handle them with `useCache` hook. Run your effects in order to update cache. It supports Concurrent Mode and rerenders components only when needed.
 
 > This package is very lightweight: 1.5kb minified (without `react`)
 
 ## Installation
-
-`npm`
 
 ```bash
 npm install cached-effect
@@ -36,33 +32,30 @@ yarn add cached-effect
 import { createEffect, useCache } from 'cached-effect'
 ```
 
-Wrap an async function or a function that returns a promise in `createEffect`:
+Wrap a function that returns a promise in `createEffect` to **create** an effect:
 
 ```js
-const myEffect = createEffect(async () => { /* do something */ })
+const effect = createEffect(async () => { /* do something */ })
 
 // or
 
-const fetchUsers = createEffect(({ organizationId }) => http
+const fetchUsers = createEffect(({ organizationId }) => axios
   .get(`/organizations/${organizationId}/users`)
-  .then(getData)
-  .then(getUsers))
+  .then(getUsers)
+)
 ```
 
-Then wrap your effect in `useCache` hook in your React component:
+Then **use** it in useCache hook in your React component:
 
 ```js
 const [users, usersError, usersLoading] = useCache(fetchUsers)
 ```
 
-It returns an array of `[result, error, pending]`. Use array destructuring
-to get values you need. These values stay the same
-until you run your effect.
+It returns an array of `[result, error, pending]`. These values stay the same until you run your effect. Use array destructuring to get values that you need.
 
 ### Running effects
 
-In order to update the cache you need to run your effect.
-You can do this, for example, in `useEffect` hook inside of your component.
+In order to update the cache you need to **run** your effect. For example, in `useEffect` hook inside of your component:
 
 ```js
 useEffect(() => {
@@ -70,9 +63,7 @@ useEffect(() => {
 }, [])
 ```
 
-So, users will be fetched after the component is mounted.
-But it's useful to run your effect only **once**, for instance,
-when you have many components using this effect:
+In this case users will be fetched after the component mounts. But it's useful to run your effect only **once**, for instance, when you have many mounting components using this effect:
 
 ```js
 useEffect(() => {
@@ -80,7 +71,7 @@ useEffect(() => {
 }, [])
 ```
 
-You can also refetch users (rerun any effect) manually just calling it:
+You can also refetch users or rerun any effect **manually** just calling it:
 
 ```js
 <Button
@@ -110,19 +101,18 @@ Returns a pending status of your effect (true/false):
 const pending = usePending(effect)
 ```
 
-You can use it to show a spinner, for example.
-It is a syntactic sugar over `useCache` hook (returns the third value)
+You can use it to show a spinner, for example. It is a syntactic sugar over `useCache` hook (the third value)
 
 #### `useError` hook
 
 Returns an error of your effect (or `null`):
 
 ```js
-const usersError = useError(fetchUsers)
+const error = useError(effect)
 ```
 
 You can use it if you need to show only an error of your effect somewhere.
-It is a syntactic sugar over `useCache` hook (the second array value)
+It is a syntactic sugar over `useCache` hook (the second value)
 
 ## Effect
 
@@ -131,7 +121,7 @@ the original async function.
 
 #### `createEffect(handler)`
 
-Creates an effect
+Creates and returns an effect
 
 #### `effect(payload)`
 
@@ -166,13 +156,13 @@ Returns a result synchronously if promise is completed successfully.
 
 There will be no `promise.cache` method if promise is rejected!
 
-#### `effect.failure()`
+#### `promise.failure()`
 
 Returns an error synchronously if promise failed.
 
 There will be no `promise.failure` method if promise fulfills!
 
-#### `effect.anyway()`
+#### `promise.anyway()`
 
 Returns a promise that will be resolved anyway (aka `.finally`)
 

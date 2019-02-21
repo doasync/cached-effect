@@ -1,12 +1,13 @@
 {
   "name": "cached-effect",
   "description": "React effect manager",
-  "version": "2.0.1",
+  "version": "2.0.4",
   "author": {
     "name": "DoAsync",
     "email": "doasync@gmail.com"
   },
   "main": "index.js",
+  "files": [],
   "dependencies": {
     "react": "^16.8.2"
   },
